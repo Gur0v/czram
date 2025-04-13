@@ -1,0 +1,4 @@
+type = scripted
+command = /usr/bin/czram mk
+stop-command = /usr/bin/czram rm --all
+depends-on = local.target
