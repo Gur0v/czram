@@ -1,0 +1,157 @@
+#!/bin/sh
+# czram - A simple script to create or remove zram devices (on Chimera Linux)
+# Usage:
+#   czram mk [--size <size>] [--algorithm <algorithm>]    # Create a new zram device (default: 4G, zstd)
+#   czram rm [--all] | /dev/zramX                         # Remove an existing zram device or all devices
+
+# Function to display usage information
+usage() {
+    echo "Usage:"
+    echo "  czram mk [--size <size>] [--algorithm <algorithm>]    # Create a new zram device (default: 4G, zstd)"
+    echo "  czram rm [--all] | /dev/zramX                         # Remove an existing zram device or all devices"
+    exit 1
+}
+
+# Check if zramctl is installed, and exit with instructions if not
+check_zramctl() {
+    if ! command -v zramctl >/dev/null 2>&1; then
+        echo "Error: zramctl is not installed."
+        echo "Please install it by running:"
+        echo " doas apk add util-linux-zramctl"
+        exit 1
+    fi
+}
+
+# Check if the zram module is loaded, and load it if not
+ensure_zram_module() {
+    if ! lsmod | grep -q '^zram'; then
+        echo "zram module is not loaded. Loading it now..."
+        doas modprobe zram
+        if [ $? -ne 0 ]; then
+            echo "Failed to load zram module. Exiting."
+            exit 1
+        fi
+    fi
+}
+
+# Create a new zram device
+create_zram() {
+    # Default values
+    size="4G"
+    algorithm="zstd"
+
+    # Parse arguments
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --size) size="$2"; shift 2 ;;
+            --algorithm) algorithm="$2"; shift 2 ;;
+            *) echo "Error: Unknown argument '$1'"; usage ;;
+        esac
+    done
+
+    # Ensure zramctl is installed
+    check_zramctl
+
+    # Ensure the zram module is loaded
+    ensure_zram_module
+
+    # Create the zram device
+    echo "Creating zram device with size $size and algorithm $algorithm..."
+    zram_device=$(doas zramctl --find --size "$size" --algorithm "$algorithm")
+    if [ $? -ne 0 ]; then
+        echo "Failed to create zram device. Exiting."
+        exit 1
+    fi
+
+    # Extract the device name from the output
+    zram_device=$(echo "$zram_device" | awk '{print $1}')
+    echo "zram device $zram_device created successfully."
+
+    # Format the zram device as a swap partition
+    echo "Formatting $zram_device as a swap partition..."
+    doas mkswap "$zram_device"
+    if [ $? -ne 0 ]; then
+        echo "Failed to format $zram_device as a swap partition. Exiting."
+        exit 1
+    fi
+
+    # Enable the swap device
+    echo "Enabling swap on $zram_device..."
+    doas swapon "$zram_device"
+    if [ $? -ne 0 ]; then
+        echo "Failed to enable swap on $zram_device. Exiting."
+        exit 1
+    fi
+
+    echo "Swap enabled on $zram_device successfully."
+}
+
+# Remove an existing zram device or all devices
+remove_zram() {
+    if [ "$1" = "--all" ]; then
+        # Get a list of all active zram devices
+        devices=$(zramctl | awk 'NR > 1 {print $1}')
+        if [ -z "$devices" ]; then
+            echo "No active zram devices found."
+            return
+        fi
+
+        # Disable swap and reset each zram device
+        echo "Disabling swap and resetting all zram devices..."
+        for device in $devices; do
+            echo "Disabling swap on $device..."
+            doas swapoff "$device"
+            if [ $? -ne 0 ]; then
+                echo "Failed to disable swap on $device. Exiting."
+                exit 1
+            fi
+
+            echo "Resetting $device..."
+            doas zramctl --reset "$device"
+            if [ $? -ne 0 ]; then
+                echo "Failed to reset $device. Exiting."
+                exit 1
+            fi
+        done
+
+        echo "All zram devices removed successfully."
+    elif [ -b "$1" ]; then
+        # Disable swap and reset a specific zram device
+        echo "Disabling swap on $1..."
+        doas swapoff "$1"
+        if [ $? -ne 0 ]; then
+            echo "Failed to disable swap on $1. Exiting."
+            exit 1
+        fi
+
+        echo "Resetting zram device $1..."
+        doas zramctl --reset "$1"
+        if [ $? -ne 0 ]; then
+            echo "Failed to reset zram device. Exiting."
+            exit 1
+        fi
+
+        echo "zram device $1 removed successfully."
+    else
+        echo "Error: Invalid argument for 'rm'. Use '--all' or specify a valid zram device path."
+        usage
+    fi
+}
+
+# Main script logic
+case "$1" in
+    mk)
+        shift
+        create_zram "$@"
+        ;;
+    rm)
+        if [ -z "$2" ]; then
+            echo "Error: Missing argument for 'rm'. Use '--all' or specify a zram device path."
+            usage
+        fi
+        remove_zram "$2"
+        ;;
+    *)
+        usage
+        ;;
+esac
