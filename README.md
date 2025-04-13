@@ -14,21 +14,7 @@ A lightweight utility for zram device management on Chimera Linux
 - **Automation** ⚙️: Seamless integration with dinit for system startup/shutdown management
 - **Performance** ⚡: Written in C for optimal efficiency
 
-## 📋 Requirements
-
-- Chimera Linux
-- `util-linux-zramctl` package
-
-## 🛠️ Building and Installation
-
 ### Quick Start
-
-```bash
-make
-doas make install
-```
-
-### Complete Build Process
 
 ```bash
 # Clone the repository
