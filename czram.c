@@ -7,7 +7,7 @@
 #define VERSION "1.0.0 - stable"
 
 void usage() {
-    printf("czram - A lightweight C utility for zram device management on Chimera Linux\n"
+    printf("czram - A lightweight utility for zram device management on Chimera Linux\n"
            "Usage:\n"
            "  czram mk [-s|--size SIZE] [-a|--algorithm ALGO]  Create a zram device\n"
            "  czram rm [--all | DEVICE]                       Remove zram devices\n"
