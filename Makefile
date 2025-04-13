@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -Wall -Wextra -O3 -march=native
+CFLAGS = -Wall -Wextra -O3 -march=native -pipe
 PREFIX ?= /usr
 
 all: czram
