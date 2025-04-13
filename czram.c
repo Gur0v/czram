@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 
 void usage() {
-    printf("czram - A zram management utility\n"
+    printf("czram - A lightweight C utility for zram device management on Chimera Linux\n"
            "Usage:\n"
            "  czram mk [-s|--size SIZE] [-a|--algorithm ALGO]  Create a zram device\n"
            "  czram rm [--all | DEVICE]                       Remove zram devices\n"
