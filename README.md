@@ -1,6 +1,6 @@
 # 🧩 czram
 
-A lightweight C utility for zram device management on Chimera Linux
+A lightweight utility for zram device management on Chimera Linux
 
 ## 🔍 Overview
 
