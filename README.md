@@ -65,7 +65,7 @@ A dinit service file is included in the repository at `etc/dinit.d/czram`. To in
 
 2. Enable the service to start at boot:
    ```
-   doas dinit enable czram
+   doas dinitctl enable czram
    ```
 
 By default, the service creates a 4G zram device with zstd compression. If you want to use different settings (size or compression algorithm), you'll need to modify the `/etc/dinit.d/czram` file and adjust the command parameters.
