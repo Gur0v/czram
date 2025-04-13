@@ -57,13 +57,33 @@ create_zram() {
 
     # Create the zram device
     echo "Creating zram device with size $size and algorithm $algorithm..."
-    doas zramctl --find --size "$size" --algorithm "$algorithm"
+    zram_device=$(doas zramctl --find --size "$size" --algorithm "$algorithm")
     if [ $? -ne 0 ]; then
         echo "Failed to create zram device. Exiting."
         exit 1
     fi
 
-    echo "zram device created successfully."
+    # Extract the device name from the output
+    zram_device=$(echo "$zram_device" | awk '{print $1}')
+    echo "zram device $zram_device created successfully."
+
+    # Format the zram device as a swap partition
+    echo "Formatting $zram_device as a swap partition..."
+    doas mkswap "$zram_device"
+    if [ $? -ne 0 ]; then
+        echo "Failed to format $zram_device as a swap partition. Exiting."
+        exit 1
+    fi
+
+    # Enable the swap device
+    echo "Enabling swap on $zram_device..."
+    doas swapon "$zram_device"
+    if [ $? -ne 0 ]; then
+        echo "Failed to enable swap on $zram_device. Exiting."
+        exit 1
+    fi
+
+    echo "Swap enabled on $zram_device successfully."
 }
 
 # Remove an existing zram device or all devices
@@ -76,9 +96,16 @@ remove_zram() {
             return
         fi
 
-        # Reset each zram device
-        echo "Resetting all zram devices..."
+        # Disable swap and reset each zram device
+        echo "Disabling swap and resetting all zram devices..."
         for device in $devices; do
+            echo "Disabling swap on $device..."
+            doas swapoff "$device"
+            if [ $? -ne 0 ]; then
+                echo "Failed to disable swap on $device. Exiting."
+                exit 1
+            fi
+
             echo "Resetting $device..."
             doas zramctl --reset "$device"
             if [ $? -ne 0 ]; then
@@ -89,7 +116,14 @@ remove_zram() {
 
         echo "All zram devices removed successfully."
     elif [ -b "$1" ]; then
-        # Reset a specific zram device
+        # Disable swap and reset a specific zram device
+        echo "Disabling swap on $1..."
+        doas swapoff "$1"
+        if [ $? -ne 0 ]; then
+            echo "Failed to disable swap on $1. Exiting."
+            exit 1
+        fi
+
         echo "Resetting zram device $1..."
         doas zramctl --reset "$1"
         if [ $? -ne 0 ]; then
