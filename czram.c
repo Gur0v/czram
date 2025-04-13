@@ -4,12 +4,15 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#define VERSION "1.0.0 - stable"
+
 void usage() {
     printf("czram - A lightweight C utility for zram device management on Chimera Linux\n"
            "Usage:\n"
            "  czram mk [-s|--size SIZE] [-a|--algorithm ALGO]  Create a zram device\n"
            "  czram rm [--all | DEVICE]                       Remove zram devices\n"
            "  czram ls                                        List active zram devices\n"
+           "  czram -v|--version                              Display version information\n"
            "\nOptions:\n"
            "  -s, --size SIZE       Size of the zram device (default: 4G)\n"
            "  -a, --algorithm ALGO  Compression algorithm (default: zstd)\n"
@@ -20,6 +23,11 @@ void usage() {
            "  czram rm --all\n"
            "  czram ls\n");
     exit(1);
+}
+
+void version() {
+    printf("czram %s\n", VERSION);
+    exit(0);
 }
 
 int run_command(const char *command) {
@@ -152,6 +160,8 @@ int main(int argc, char **argv) {
         remove_zram(argv[2]);
     } else if (!strcmp(argv[1], "ls")) {
         list_zram();
+    } else if (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version")) {
+        version();
     } else {
         usage();
     }
