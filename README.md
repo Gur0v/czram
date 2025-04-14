@@ -1,4 +1,7 @@
 # 🧩 czram
+[![GitHub License](https://img.shields.io/github/license/Gur0v/czram)](https://github.com/Gur0v/czram/blob/main/LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/Gur0v/czram)](https://github.com/Gur0v/czram/stargazers)
+[![Linux Support](https://img.shields.io/badge/platform-linux-brightgreen)](https://github.com/Gur0v/czram#-compatibility)
 
 A lightweight utility for zram device management on Chimera Linux
 
