@@ -1,9 +1,21 @@
+/**
+ * @file utils.c
+ * @brief Utility functions for executing shell commands.
+ */
+
 #include "utils.h"
 #include "czram.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * @brief Executes a shell command.
+ * 
+ * @param format The format string for the command.
+ * @param ... Arguments for the format string.
+ * @return Exit status of the command.
+ */
 int execute_command(const char *format, ...) {
     char cmd[MAX_CMD_LEN];
     va_list args;
@@ -20,6 +32,13 @@ int execute_command(const char *format, ...) {
     return pclose(pipe);
 }
 
+/**
+ * @brief Executes a shell command and captures its output.
+ * 
+ * @param format The format string for the command.
+ * @param ... Arguments for the format string.
+ * @return Pointer to the command output, or NULL on failure.
+ */
 char *execute_command_with_output(const char *format, ...) {
     char cmd[MAX_CMD_LEN];
     va_list args;
