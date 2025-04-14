@@ -104,10 +104,14 @@ void remove_zram(const char *arg) {
 /**
  * @brief Lists all active zram devices.
  * 
- * Executes the `zramctl` command to display information about active zram devices.
+ * Executes the `zramctl` command and prints its output to the console.
  */
 void list_zram(void) {
-    if (execute_command("zramctl") != 0) {
+    char *output = execute_command_with_output("zramctl");
+    if (!output) {
         print_error_and_exit("Failed to list zram devices");
     }
+
+    printf("%s", output);
+    free(output);
 }
