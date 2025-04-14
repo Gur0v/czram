@@ -1,9 +1,25 @@
+/**
+ * @file main.c
+ * @brief Entry point for czram.
+ * 
+ * Parses command-line arguments and invokes the appropriate zram management function.
+ */
+
 #include "czram.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+/**
+ * @brief Main entry point of czram.
+ * 
+ * Parses command-line arguments and calls the corresponding function.
+ * 
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line arguments.
+ * @return Exit status of the program.
+ */
 int main(int argc, char **argv) {
     if (argc < 2) usage();
 
@@ -27,6 +43,9 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+/**
+ * @brief Displays usage information for czram.
+ */
 void usage(void) {
     printf("czram %s - zram device management\n\n"
            "Usage:\n"
@@ -41,16 +60,29 @@ void usage(void) {
     exit(0);
 }
 
+/**
+ * @brief Displays the version of czram.
+ */
 void version(void) {
     printf("czram %s\n", VERSION);
     exit(0);
 }
 
+/**
+ * @brief Prints an error message and exits the program.
+ * 
+ * @param message The error message to display.
+ */
 void print_error_and_exit(const char *message) {
     fprintf(stderr, "Error: %s\n", message);
     exit(1);
 }
 
+/**
+ * @brief Checks if the current user has root privileges.
+ * 
+ * Exits the program with an error message if not running as root.
+ */
 void check_root_privileges(void) {
     if (geteuid() != 0) {
         print_error_and_exit("This operation requires root privileges");
