@@ -8,7 +8,7 @@
 #ifndef CZRAM_H
 #define CZRAM_H
 
-#define VERSION "1.3.0 - stable"      /**< Version of the czram tool. */
+#define VERSION "1.3.0 - stable"      /**< Version of czram. */
 #define MAX_SIZE_LEN 16               /**< Maximum length of the size string. */
 #define MAX_ALGO_LEN 16               /**< Maximum length of the algorithm string. */
 #define MAX_DEVICE_LEN 64             /**< Maximum length of a device name. */
@@ -17,12 +17,12 @@
 #define MAX_OUTPUT_LEN 1024           /**< Maximum length of command output. */
 
 /**
- * @brief Displays usage information for the czram tool.
+ * @brief Displays usage information for czram.
  */
 void usage(void);
 
 /**
- * @brief Displays the version of the czram tool.
+ * @brief Displays the version of czram.
  */
 void version(void);
 
