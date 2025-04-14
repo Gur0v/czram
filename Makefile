@@ -1,19 +1,22 @@
-CC = clang
 CFLAGS = -Wall -Wextra -O3 -march=native -pipe
-PREFIX ?= /usr
+LDFLAGS = 
+TARGET = czram
 
-all: czram
+SRC = main.c commands.c validation.c utils.c
+OBJ = $(SRC:.c=.o)
 
-czram: czram.c
-	$(CC) $(CFLAGS) -o czram czram.c
+all: $(TARGET)
 
-install: czram
-	cp czram $(DESTDIR)$(PREFIX)/bin/
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f czram
+	rm -f $(OBJ) $(TARGET)
 
-uninstall:
-	rm -f $(DESTDIR)$(PREFIX)/bin/czram
+install: $(TARGET)
+	install -m 755 $(TARGET) /usr/bin
 
-.PHONY: all install clean uninstall
+.PHONY: all clean install
