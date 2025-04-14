@@ -1,7 +1,7 @@
 #ifndef CZRAM_H
 #define CZRAM_H
 
-#define VERSION "1.3.0"
+#define VERSION "1.3.0-rc1 - testing"
 #define MAX_SIZE_LEN 16
 #define MAX_ALGO_LEN 16
 #define MAX_DEVICE_LEN 64
