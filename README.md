@@ -12,7 +12,6 @@ A lightweight utility for zram device management on Chimera Linux
 - **Simple Management** 🔄: Remove specific devices or all active instances with a single command
 - **Visibility** 👁️: List and monitor active zram devices
 - **Automation** ⚙️: Seamless integration with dinit for system startup/shutdown management
-- **Perfotossance** ⚡: Written in C for optimal efficiency
 
 ### Quick Start
 
