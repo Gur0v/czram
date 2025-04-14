@@ -27,12 +27,6 @@ make
 doas make install
 ```
 
-For custom installation paths:
-
-```bash
-doas make PREFIX=/usr/local install
-```
-
 ## 📚 Usage
 
 ### Creating a zram Device 💾
