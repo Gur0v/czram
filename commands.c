@@ -72,11 +72,19 @@ void remove_zram(const char *arg) {
 
         char *dev = strtok(output, "\n");
         while (dev) {
-            if (execute_command("swapoff /dev/%s && zramctl --reset /dev/%s", dev, dev) != 0) {
+            dev[strcspn(dev, "\n")] = '\0';
+
+            if (!is_zram_device(dev)) {
+                free(output);
+                print_error_and_exit("Invalid zram device encountered");
+            }
+
+            if (execute_command("swapoff %s && zramctl --reset %s", dev, dev) != 0) {
                 free(output);
                 print_error_and_exit("Failed to remove zram device");
             }
-            printf("Removed /dev/%s\n", dev);
+            printf("Removed %s\n", dev);
+
             dev = strtok(NULL, "\n");
         }
         free(output);
