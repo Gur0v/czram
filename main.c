@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
  * @brief Displays usage information for czram.
  */
 void usage(void) {
-    printf("czram - a lightweight utility for zram device management\n\n"
+    printf("czram - A lightweight utility for zram device management\n"
            "Usage:\n"
            "  czram make [-s SIZE] [-a ALGO]  Create zram device\n"
            "  czram toss [--all|DEVICE]       Remove zram device(s)\n"
