@@ -1,8 +1,24 @@
+/**
+ * @file commands.c
+ * @brief Implementation of zram device management commands.
+ * 
+ * This file contains functions to create, remove, and list zram devices.
+ */
+
 #include "czram.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * @brief Creates a new zram device with specified size and compression algorithm.
+ * 
+ * Parses command-line arguments to determine the size and algorithm for the zram device.
+ * Checks for root privileges, creates the device using `zramctl`, and activates it as swap.
+ * 
+ * @param argc Number of command-line arguments.
+ * @param argv Array of command-line arguments.
+ */
 void create_zram(int argc, char **argv) {
     char size[MAX_SIZE_LEN] = "4G";
     char algorithm[MAX_ALGO_LEN] = "zstd";
@@ -39,6 +55,14 @@ void create_zram(int argc, char **argv) {
     free(zram_dev);
 }
 
+/**
+ * @brief Removes a zram device or all zram devices.
+ * 
+ * If the argument is `--all`, removes all active zram devices. Otherwise, removes the specified device.
+ * Ensures root privileges are available before proceeding.
+ * 
+ * @param arg The zram device to remove, or `--all` to remove all devices.
+ */
 void remove_zram(const char *arg) {
     check_root_privileges();
 
@@ -69,6 +93,11 @@ void remove_zram(const char *arg) {
     }
 }
 
+/**
+ * @brief Lists all active zram devices.
+ * 
+ * Executes the `zramctl` command to display information about active zram devices.
+ */
 void list_zram(void) {
     if (execute_command("zramctl") != 0) {
         print_error_and_exit("Failed to list zram devices");
