@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#define VERSION "1.2.0 - stable"
+#define VERSION "1.2.1 - testing"
 
 void usage();
 void version();
