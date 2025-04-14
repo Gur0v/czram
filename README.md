@@ -4,7 +4,7 @@ A lightweight utility for zram device management on Chimera Linux
 
 ## 🔍 Overview
 
-`czram` provides an elegant and efficient solution for managing compressed RAM-based swap devices (zram) on Chimera Linux. By utilizing RAM compression, zram offers significantly faster swap operations compared to traditional disk-based swap, improving system perfotossance during high memory usage scenarios.
+`czram` provides an elegant and efficient solution for managing compressed RAM-based swap devices (zram) on Chimera Linux. By utilizing RAM compression, zram offers significantly faster swap operations compared to traditional disk-based swap, improving system performance during high memory usage scenarios.
 
 ## ✨ Features
 
