@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
  * @brief Displays usage information for czram.
  */
 void usage(void) {
-    printf("czram %s - a lightweight utility for zram device management\n\n"
+    printf("czram - a lightweight utility for zram device management\n\n"
            "Usage:\n"
            "  czram make [-s SIZE] [-a ALGO]  Create zram device\n"
            "  czram toss [--all|DEVICE]       Remove zram device(s)\n"
@@ -55,8 +55,7 @@ void usage(void) {
            "  czram -v, --version             Show version\n\n"
            "Options:\n"
            "  -s, --size SIZE      Device size (default: 4G)\n"
-           "  -a, --algorithm ALGO Compression algorithm (default: zstd)\n",
-           VERSION);
+           "  -a, --algorithm ALGO Compression algorithm (default: zstd)\n");
     exit(0);
 }
 
