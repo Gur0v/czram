@@ -21,22 +21,24 @@
  * @return Exit status of the program.
  */
 int main(int argc, char **argv) {
-    if (argc < 2) usage();
+    // Ensure at least one argument is provided
+    if (argc < 2) {
+        usage();
+    }
 
+    // Parse the first argument to determine the command
     if (!strcmp(argv[1], "make")) {
         create_zram(argc - 2, argv + 2);
-    } 
-    else if (!strcmp(argv[1], "toss")) {
-        if (argc < 3) print_error_and_exit("Error: Missing argument for 'toss'");
+    } else if (!strcmp(argv[1], "toss")) {
+        if (argc < 3) {
+            print_error_and_exit("Missing argument for 'toss'. Use --all or specify a device.");
+        }
         remove_zram(argv[2]);
-    } 
-    else if (!strcmp(argv[1], "list")) {
+    } else if (!strcmp(argv[1], "list")) {
         list_zram();
-    } 
-    else if (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version")) {
+    } else if (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version")) {
         version();
-    }
-    else {
+    } else {
         usage();
     }
 
@@ -49,8 +51,8 @@ int main(int argc, char **argv) {
 void usage(void) {
     printf("czram - A lightweight utility for zram device management\n"
            "Usage:\n"
-           "  czram make [-s SIZE] [-a ALGO]  Create zram device\n"
-           "  czram toss [--all|DEVICE]       Remove zram device(s)\n"
+           "  czram make [-s SIZE] [-a ALGO]  Create a zram device\n"
+           "  czram toss [--all|DEVICE]       Remove a zram device or all devices\n"
            "  czram list                      List active zram devices\n"
            "  czram -v, --version             Show version\n\n"
            "Options:\n"
@@ -84,6 +86,6 @@ void print_error_and_exit(const char *message) {
  */
 void check_root_privileges(void) {
     if (geteuid() != 0) {
-        print_error_and_exit("This operation requires root privileges");
+        print_error_and_exit("This operation requires root privileges. Please run as root.");
     }
 }
