@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#define VERSION "1.2.0 - stable"
+#define VERSION "1.2.1 - stable"
 
 void usage();
 void version();
@@ -37,31 +37,33 @@ void validate_device(const char *device) {
 }
 
 void handle_old_syntax(const char *old_cmd) {
-    fprintf(stderr, "Warning: The '%s' command is deprecated since version %s.\n"
-                    "Please update to the new syntax:\n"
-                    "  mk -> make\n"
-                    "  rm -> toss\n"
-                    "  ls -> list\n"
-                    "This notification will be removed in the next release, and the app will error out.\n",
-            old_cmd, VERSION);
+    fprintf(stderr,
+        "Warning: The '%s' command is deprecated since version %s.\n"
+        "Please update to the new syntax:\n"
+        "  mk -> make\n"
+        "  rm -> toss\n"
+        "  ls -> list\n"
+        "This notification will be removed in the next major release, and the app will error out.\n",
+        old_cmd, VERSION);
 }
 
 void usage() {
-    printf("czram - A lightweight utility for zram device management\n"
-           "Usage:\n"
-           "  czram make [-s|--size SIZE] [-a|--algorithm ALGO]  Create a zram device\n"
-           "  czram toss [--all | DEVICE]                        Remove zram devices\n"
-           "  czram list                                         List active zram devices\n"
-           "  czram -v|--version                                 Display version information\n"
-           "\nOptions:\n"
-           "  -s, --size SIZE       Size of the zram device (default: 4G)\n"
-           "  -a, --algorithm ALGO  Compression algorithm (default: zstd)\n"
-           "  --all                 Remove all zram devices\n"
-           "  DEVICE                Path to a specific zram device (e.g., /dev/zram0)\n"
-           "\nExamples:\n"
-           "  czram make -s 2G -a lzo\n"
-           "  czram toss --all\n"
-           "  czram list\n");
+    printf(
+        "czram - A lightweight utility for zram device management\n"
+        "Usage:\n"
+        "  czram make [-s|--size SIZE] [-a|--algorithm ALGO]  Create a zram device\n"
+        "  czram toss [--all | DEVICE]                        Remove zram devices\n"
+        "  czram list                                         List active zram devices\n"
+        "  czram -v|--version                                 Display version information\n"
+        "\nOptions:\n"
+        "  -s, --size SIZE       Size of the zram device (default: 4G)\n"
+        "  -a, --algorithm ALGO  Compression algorithm (default: zstd)\n"
+        "  --all                 Remove all zram devices\n"
+        "  DEVICE                Path to a specific zram device (e.g., /dev/zram0)\n"
+        "\nExamples:\n"
+        "  czram make -s 2G -a lzo\n"
+        "  czram toss --all\n"
+        "  czram list\n");
     exit(1);
 }
 
@@ -115,7 +117,8 @@ void list_zram() {
 }
 
 void create_zram(int argc, char **argv) {
-    char size[16] = "4G", algorithm[16] = "zstd";
+    char size[16] = "4G";
+    char algorithm[16] = "zstd";
 
     for (int i = 0; i < argc; i++) {
         if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--size")) {
@@ -139,6 +142,7 @@ void create_zram(int argc, char **argv) {
 
     char command[256], zram_device[64];
     snprintf(command, sizeof(command), "zramctl --find --size %s --algorithm %s", size, algorithm);
+
     FILE *pipe = popen(command, "r");
     if (!pipe || !fgets(zram_device, sizeof(zram_device), pipe)) {
         pclose(pipe);
@@ -169,17 +173,22 @@ void remove_zram(const char *arg) {
 
         char device[64];
         int found = 0;
+
         while (fgets(device, sizeof(device), pipe)) {
             device[strcspn(device, "\n")] = '\0';
             printf("Removing %s...\n", device);
+
             char command[128];
             snprintf(command, sizeof(command), "swapoff %s && zramctl --reset %s", device, device);
+
             if (run_command(command)) {
                 pclose(pipe);
                 print_error_and_exit("Failed to remove zram device.");
             }
+
             found = 1;
         }
+
         pclose(pipe);
 
         if (!found) {
@@ -189,10 +198,11 @@ void remove_zram(const char *arg) {
         }
     } else {
         validate_device(arg);
-
         printf("Removing %s...\n", arg);
+
         char command[128];
         snprintf(command, sizeof(command), "swapoff %s && zramctl --reset %s", arg, arg);
+
         if (run_command(command)) {
             print_error_and_exit("Failed to remove zram device.");
         }
@@ -217,6 +227,7 @@ int main(int argc, char **argv) {
         version();
     } else if (!strcmp(argv[1], "mk") || !strcmp(argv[1], "rm") || !strcmp(argv[1], "ls")) {
         handle_old_syntax(argv[1]);
+
         if (!strcmp(argv[1], "mk")) {
             create_zram(argc - 2, argv + 2);
         } else if (!strcmp(argv[1], "rm")) {
@@ -233,3 +244,4 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
