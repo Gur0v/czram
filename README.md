@@ -27,6 +27,30 @@ make
 doas make install
 ```
 
+For custom installation paths:
+ 
+```bash
+doas make PREFIX=/usr/local install
+```
+
+## 🔌 System Integration
+
+### dinit Service Setup
+
+A ready-to-use dinit service is included in the repository:
+
+1. Copy the service file:
+   ```
+   doas cp dinit.d/czram /etc/dinit.d/
+   ```
+
+2. Enable the service:
+   ```
+   doas dinitctl enable czram
+   ```
+
+The default service creates a 4G zram device with zstd compression. To customize, edit `/etc/dinit.d/czram` and modify the command parameters to suit your system's needs.
+ 
 ## 📚 Usage
 
 ### Creating a zram Device 💾
@@ -59,24 +83,6 @@ czram toss --all
 ```
 czram list
 ```
-
-## 🔌 System Integration
-
-### dinit Service Setup
-
-A ready-to-use dinit service is included in the repository:
-
-1. Copy the service file:
-   ```
-   doas cp etc/dinit.d/czram /etc/dinit.d/
-   ```
-
-2. Enable the service:
-   ```
-   doas dinitctl enable czram
-   ```
-
-The default service creates a 4G zram device with zstd compression. To customize, edit `/etc/dinit.d/czram` and modify the command parameters to suit your system's needs.
 
 ## 📜 License
 
