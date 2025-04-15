@@ -17,3 +17,4 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/czram
 
 .PHONY: all install clean uninstall
+
