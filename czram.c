@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#define VERSION "1.2.1 - stable"
+#define VERSION "1.2.2 - stable"
 
 void usage();
 void version();
@@ -153,7 +153,7 @@ void create_zram(int argc, char **argv) {
     zram_device[strcspn(zram_device, "\n")] = '\0';
     printf("Created zram device: %s\n", zram_device);
 
-    snprintf(command, sizeof(command), "mkswap %s && swapon %s", zram_device, zram_device);
+    snprintf(command, sizeof(command), "mkswap %s && swapon -p 100 %s", zram_device, zram_device);
     if (run_command(command)) {
         print_error_and_exit("Failed to format or enable swap on zram device.");
     }
