@@ -1,37 +1,45 @@
 # 🧩 czram
 
-A lightweight utility for zram device management on Chimera Linux inspired by [zramen](<https://github.com/atweiden/zramen>)
+A lightweight utility for zram device management on Chimera Linux, inspired by [zramen](https://github.com/atweiden/zramen).
+
+---
 
 ## 🔍 Overview
 
-`czram` provides an elegant and efficient solution for managing compressed RAM-based swap devices (zram) on Chimera Linux. By utilizing RAM compression, zram offers significantly faster swap operations compared to traditional disk-based swap, improving system performance during high memory usage scenarios.
+`czram` simplifies the management of compressed RAM-based swap devices (zram) on Chimera Linux. By leveraging zram's RAM compression capabilities, it provides significantly faster swap operations compared to traditional disk-based swap, enhancing system performance during high memory usage scenarios.
+
+---
 
 ## ✨ Features
 
-- **Effortless Creation** 🚀: Generate zram devices with customizable size and compression algorithms
-- **Simple Management** 🔄: Remove specific devices or all active instances with a single command
-- **Visibility** 👁️: List and monitor active zram devices
-- **Automation** ⚙️: Seamless integration with dinit for system startup/shutdown management
+- **Effortless Creation** 🚀: Create zram devices with customizable size, compression algorithms, and priority.
+- **Flexible Management** 🔄: Remove specific devices or all active instances with ease.
+- **Visibility** 👁️: List and monitor active zram devices effortlessly.
+- **Automation** ⚙️: Seamless integration with dinit for system startup/shutdown management.
 
-### Quick Start
+---
 
-```bash
-# Clone the repository
-git clone --depth=1 https://github.com/Gur0v/czram
-cd czram
+## 🚀 Quick Start
 
-# Build the project
-make
+### Installation
 
-# Install to system
-doas make install
-```
+1. Clone the repository:
+   ```bash
+   git clone --depth=1 https://github.com/Gur0v/czram
+   cd czram
+   ```
 
-For custom installation paths:
- 
-```bash
-doas make PREFIX=/usr/local install
-```
+2. Build the project:
+   ```bash
+   make
+   ```
+
+3. Install to your system:
+   ```bash
+   doas make install
+   ```
+
+---
 
 ## 🔌 System Integration
 
@@ -40,50 +48,68 @@ doas make PREFIX=/usr/local install
 A ready-to-use dinit service is included in the repository:
 
 1. Copy the service file:
-   ```
+   ```bash
    doas cp dinit.d/czram /etc/dinit.d/
    ```
 
 2. Enable the service:
-   ```
+   ```bash
    doas dinitctl enable czram
    ```
 
-The default service creates a 4G zram device with zstd compression. To customize, edit `/etc/dinit.d/czram` and modify the command parameters to suit your system's needs.
- 
+The default service creates a 4G zram device with `zstd` compression. To customize, edit `/etc/dinit.d/czram` and modify the command parameters to suit your system's needs.
+
+---
+
 ## 📚 Usage
 
 ### Creating a zram Device 💾
 
-```
-czram make [-s|--size SIZE] [-a|--algorithm ALGO]
+```bash
+czram make [-s|--size SIZE] [-a|--algorithm ALGO] [-p|--priority PRIO]
 ```
 
-Options:
-- `-s`, `--size`: Device size (default: 4G)
-- `-a`, `--algorithm`: Compression algorithm (default: zstd)
+#### Options:
+- `-s`, `--size`: Device size (default: `4G`).
+- `-a`, `--algorithm`: Compression algorithm (default: `zstd`).
+- `-p`, `--priority`: Swap priority (default: `100`, max: `32767`).
 
-Example:
+#### Supported Compression Algorithms:
+- `lzo`
+- `lzo-rle`
+- `lz4`
+- `lz4hc`
+- `zstd`
+- `deflate`
+- `842`
+
+#### Example:
+```bash
+czram make -s 2G -a lz4 -p 500
 ```
-czram make -s 2G -a lzo
-```
+
+---
 
 ### Removing zram Devices 🗑️
 
-```
-# Remove specific device
+```bash
+# Remove a specific device
 czram toss /dev/zram0
 
 # Remove all devices
 czram toss --all
 ```
 
+---
+
 ### Listing Active Devices 📊
 
-```
+```bash
 czram list
 ```
 
+---
+
 ## 📜 License
 
-This project is licensed under the [BSD-3-Clause License.](LICENSE)
+This project is licensed under the [BSD-3-Clause License](LICENSE).
