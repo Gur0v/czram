@@ -5,17 +5,20 @@
 #include <sys/stat.h>
 #include <ctype.h>
 
-#define VER "1.3.1-stable"
+#define VER "1.4.0"
+#define CONF "/etc/default/czram"
 
 void usage(), version();
 void ensure_zram(), list_zram();
-void create_zram(int argc, char **argv);
+void create_zram(void);
 void remove_zram(const char *arg);
 void check_root(), check_zramctl();
 int is_valid_size(const char *sz), is_valid_algo(const char *algo);
 void die(const char *msg);
 void check_dev(const char *dev);
 int run_cmd(const char *cmd);
+void load_config(char *sz, char *algo, int *prio);
+unsigned long parse_size(const char *sz);
 
 void die(const char *msg) {
     fprintf(stderr, "Error: %s\n", msg);
@@ -54,6 +57,7 @@ void ensure_zram() {
 }
 
 int is_valid_size(const char *sz) {
+    if (strstr(sz, "%RAM")) return 1;
     char unit = '\0';
     return (sscanf(sz, "%*d%c", &unit) == 1) && (unit == 'G' || unit == 'M' || unit == 'K');
 }
@@ -65,22 +69,60 @@ int is_valid_algo(const char *algo) {
     return 0;
 }
 
+unsigned long get_total_ram_kb() {
+    FILE *f = fopen("/proc/meminfo", "r");
+    if (!f) die("Cannot read /proc/meminfo");
+    unsigned long kb = 0;
+    fscanf(f, "MemTotal: %lu", &kb);
+    fclose(f);
+    return kb;
+}
+
+unsigned long parse_size(const char *sz) {
+    if (strstr(sz, "%RAM")) {
+        int percent = atoi(sz);
+        if (percent <= 0 || percent > 100)
+            die("Invalid RAM percentage");
+        unsigned long total_kb = get_total_ram_kb();
+        return (total_kb * percent / 100) * 1024;
+    }
+    unsigned long val;
+    char unit;
+    if (sscanf(sz, "%lu%c", &val, &unit) != 2)
+        die("Invalid size format");
+    switch (unit) {
+        case 'G': return val * 1024UL * 1024UL * 1024UL;
+        case 'M': return val * 1024UL * 1024UL;
+        case 'K': return val * 1024UL;
+        default: die("Unknown size unit");
+    }
+    return 0;
+}
+
+void load_config(char *sz, char *algo, int *prio) {
+    FILE *f = fopen(CONF, "r");
+    if (!f) die("Could not read config file");
+    char line[128];
+    while (fgets(line, sizeof(line), f)) {
+        if (line[0] == '#' || !strchr(line, '=')) continue;
+        char *key = strtok(line, "=\n");
+        char *val = strtok(NULL, "=\n");
+        if (!key || !val) continue;
+        if (!strcmp(key, "SIZE")) strncpy(sz, val, 15);
+        else if (!strcmp(key, "ALGO")) strncpy(algo, val, 15);
+        else if (!strcmp(key, "PRIO")) *prio = atoi(val);
+    }
+    fclose(f);
+}
+
 void usage() {
     puts(
         "czram - Lightweight zram manager\n"
         "Usage:\n"
-        "  czram make [-s SIZE] [-a ALGO] [-p PRIO]   Create a zram device\n"
-        "  czram toss [--all | DEVICE]                Remove zram devices\n"
-        "  czram list                                 List active zram devices\n"
-        "  czram -v|--version                         Show version info\n"
-        "Options:\n"
-        "  -s, --size SIZE     Size of zram device (default: 4G)\n"
-        "  -a, --algorithm A   Compression algorithm (default: zstd)\n"
-        "  -p, --priority P    Swap priority (0-32767, default: 100)\n"
-        "  --all               Remove all zram devices\n"
-        "Examples:\n"
-        "  czram make -s 2G -a lzo -p 500\n"
-        "  czram toss --all\n"
+        "  czram make                        Create a zram device\n"
+        "  czram toss [--all | DEVICE]       Remove zram devices\n"
+        "  czram list                        List active zram devices\n"
+        "  czram -v|--version                Show version info\n"
     );
     exit(1);
 }
@@ -97,33 +139,22 @@ void list_zram() {
         die("Failed to list zram devices.");
 }
 
-void create_zram(int argc, char **argv) {
-    char sz[16] = "4G", algo[16] = "zstd";
-    int prio = 100;
+void create_zram(void) {
+    char sz[16] = "", algo[16] = "";
+    int prio = -1;
+    load_config(sz, algo, &prio);
 
-    for (int i = 0; i < argc; ++i) {
-        if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--size")) {
-            if (++i >= argc || !is_valid_size(argv[i]))
-                die("Invalid size format.");
-            strncpy(sz, argv[i], sizeof(sz) - 1);
-        } else if (!strcmp(argv[i], "-a") || !strcmp(argv[i], "--algorithm")) {
-            if (++i >= argc || !is_valid_algo(argv[i]))
-                die("Invalid compression algorithm.");
-            strncpy(algo, argv[i], sizeof(algo) - 1);
-        } else if (!strcmp(argv[i], "-p") || !strcmp(argv[i], "--priority")) {
-            if (++i >= argc || sscanf(argv[i], "%d", &prio) != 1 || prio < 0 || prio > 32767)
-                die("Invalid priority. Must be 0-32767.");
-        } else {
-            die("Unknown option.");
-        }
-    }
+    if (!is_valid_size(sz)) die("Invalid size in config");
+    if (!is_valid_algo(algo)) die("Invalid algorithm in config");
+    if (prio < 0 || prio > 32767) die("Invalid priority in config");
 
     check_root();
     check_zramctl();
     ensure_zram();
 
+    unsigned long bytes = parse_size(sz);
     char cmd[256], dev[64];
-    snprintf(cmd, sizeof(cmd), "zramctl --find --size %s --algorithm %s", sz, algo);
+    snprintf(cmd, sizeof(cmd), "zramctl --find --size %lu --algorithm %s", bytes, algo);
 
     FILE *fp = popen(cmd, "r");
     if (!fp || !fgets(dev, sizeof(dev), fp)) {
@@ -131,7 +162,6 @@ void create_zram(int argc, char **argv) {
         die("zramctl failed to create device.");
     }
     pclose(fp);
-
     dev[strcspn(dev, "\n")] = 0;
 
     printf("Created: %s\n", dev);
@@ -155,7 +185,6 @@ void remove_zram(const char *arg) {
         while (fgets(dev, sizeof(dev), fp)) {
             dev[strcspn(dev, "\n")] = 0;
             printf("Removing %s...\n", dev);
-
             char cmd[128];
             snprintf(cmd, sizeof(cmd), "swapoff %s && zramctl --reset %s", dev, dev);
             if (run_cmd(cmd)) {
@@ -182,7 +211,7 @@ int main(int argc, char **argv) {
     if (argc < 2) usage();
 
     if (!strcmp(argv[1], "make")) {
-        create_zram(argc - 2, argv + 2);
+        create_zram();
     } else if (!strcmp(argv[1], "toss")) {
         if (argc < 3) die("Missing argument for 'toss'");
         remove_zram(argv[2]);
