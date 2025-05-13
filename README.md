@@ -1,5 +1,5 @@
 # 🧩 czram
-A lightweight utility for zram device management on Chimera Linux, inspired by [zramen](https://github.com/atweiden/zramen).
+Lightweight zram manager for Chimera Linux, inspired by [zramen](https://github.com/atweiden/zramen).
 
 ---
 ## 🔍 Overview
