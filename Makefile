@@ -1,5 +1,7 @@
 CC = clang
 CFLAGS = -Wall -Wextra -O3 -march=native -pipe
+# Testing
+#CFLAGS = -Wall -Wextra -O3 -march=native -pipe -fstack-protector-strong -fPIE -pie -D_FORTIFY_SOURCE=2 -flto=thin
 PREFIX ?= /usr
 
 all: czram
