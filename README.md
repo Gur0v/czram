@@ -1,89 +1,63 @@
-# 🧩 czram
-Lightweight zram manager for Chimera Linux, inspired by [zramen](https://github.com/atweiden/zramen).
+# czram
+Lightweight zram manager for [Chimera Linux](https://chimera-linux.org), inspired by [zramen](https://github.com/atweiden/zramen).
 
----
-## 🔍 Overview
-`czram` simplifies the management of compressed RAM-based swap devices (zram) on Chimera Linux. By leveraging zram's RAM compression capabilities, it provides significantly faster swap operations compared to traditional disk-based swap, enhancing system performance during high memory usage scenarios.
+## Overview
+`czram` manages compressed RAM-based swap devices using the Linux kernel zram module.  
+Provides faster swap performance than disk with efficient memory compression.
+Written in C with zero dependencies beyond core system utilities.
 
----
-## ✨ Features
-- **Effortless Creation** 🚀: Create zram devices with customizable size, compression algorithms, and priority.
-- **Flexible Management** 🔄: Remove specific devices or all active instances with ease.
-- **Visibility** 👁️: List and monitor active zram devices effortlessly.
-- **Automation** ⚙️: Seamless integration with dinit for system startup/shutdown management.
+## Features
+- Simple configuration via `/etc/default/czram`
+- Fast provisioning of zram swap devices with automatic sizing
+- Device management: create and remove zram devices as needed
+- Status reporting of active zram devices
+- Dinit integration for system startup
 
----
-## 🚀 Quick Start
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone --depth=1 https://github.com/Gur0v/czram
-   cd czram
-   ```
-2. Build the project:
-   ```bash
-   make
-   ```
-3. Install to your system:
-   ```bash
-   doas make install
-   ```
-
----
-## 🔌 System Integration
-### dinit Service Setup
-A ready-to-use dinit service is included in the repository:
-1. Copy the service file:
-   ```bash
-   doas cp dinit.d/czram /etc/dinit.d/
-   ```
-2. Enable the service:
-   ```bash
-   doas dinitctl enable czram
-   ```
-The default service creates a 4G zram device with `zstd` compression. To customize, edit `/etc/dinit.d/czram` and modify the command parameters to suit your system's needs.
-
----
-## 📚 Usage
-### Creating a zram Device 💾
-```bash
-czram make [-s|--size SIZE] [-a|--algorithm ALGO] [-p|--priority PRIO]
+## Configuration
+Configure via `/etc/default/czram`:
 ```
-#### Options:
-- `-s`, `--size`: Device size (default: `4G`).
-- `-a`, `--algorithm`: Compression algorithm (default: `zstd`).
-- `-p`, `--priority`: Swap priority (default: `100`, max: `32767`).
-#### Supported Compression Algorithms:
-- `lzo`
-- `lzo-rle`
-- `lz4`
-- `lz4hc`
-- `zstd`
-- `deflate`
-- `842`
-#### Example:
-```bash
-czram make -s 2G -a lz4 -p 500
-```
----
-
-### Removing zram Devices 🗑️
-```bash
-# Remove a specific device
-czram toss /dev/zram0
-
-# Remove all devices
-czram toss --all
+# Size: absolute (2G, 512M) or RAM percentage (25%RAM)
+SIZE=25%RAM
+# Compression algorithm
+ALGO=zstd
+# Swap priority (higher values preferred)
+PRIO=32767
 ```
 
----
-### Listing Active Devices 📊
-```bash
+## Installation
+```
+git clone https://github.com/Gur0v/czram
+cd czram
+doas make clean install
+```
+
+Installs:
+- `/usr/bin/czram` (binary)
+- `/etc/default/czram` (config)
+- `/etc/dinit.d/czram` (service)
+
+## Dinit Integration
+Enable zram on boot:
+```
+doas dinitctl enable czram
+```
+
+## Usage
+Create zram device:
+```
+czram make
+```
+
+Remove zram devices:
+```
+czram toss /dev/zram0    # Remove specific device
+czram toss --all         # Remove all devices
+```
+
+List active devices:
+```
 czram list
 ```
 
----
-
-## 📜 License
-
-This project is licensed under the [BSD-3-Clause License](LICENSE).
+## License
+[BSD 3-Clause License](LICENSE)
