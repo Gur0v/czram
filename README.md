@@ -60,4 +60,4 @@ czram list
 ```
 
 ## License
-[BSD 3-Clause License](LICENSE)
+[BSD-3-Clause License](LICENSE)
