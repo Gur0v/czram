@@ -1,0 +1,15 @@
+# czram configuration file
+
+# Size of the zram device. Supports absolute sizes (e.g., 2G, 512M)
+# or a percentage of total RAM (e.g., 25%RAM).
+SIZE=25%RAM
+
+# Compression algorithm to use.
+# Recommended: zstd (fast and efficient)
+ALGO=zstd
+
+# Swap priority for zram (0–32767).
+# Higher means more preferred for swapping.
+# 32767 is ideal for compressed RAM-based swap.
+PRIO=32767
+
