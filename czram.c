@@ -3,208 +3,178 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <ctype.h>
 
-#define VERSION "1.3.0 - stable"
+#define VER "1.3.1-stable"
 
-void usage();
-void version();
-int run_command(const char *command);
-void check_zramctl();
-void ensure_zram_module();
-int is_valid_size(const char *size);
-int is_valid_algorithm(const char *algo);
-void list_zram();
+void usage(), version();
+void ensure_zram(), list_zram();
 void create_zram(int argc, char **argv);
 void remove_zram(const char *arg);
-void print_error_and_exit(const char *message);
-void check_root_privileges();
-void validate_device(const char *device);
+void check_root(), check_zramctl();
+int is_valid_size(const char *sz), is_valid_algo(const char *algo);
+void die(const char *msg);
+void check_dev(const char *dev);
+int run_cmd(const char *cmd);
 
-void print_error_and_exit(const char *message) {
-    fprintf(stderr, "%s\n", message);
+void die(const char *msg) {
+    fprintf(stderr, "Error: %s\n", msg);
     exit(1);
 }
 
-void check_root_privileges() {
-    if (geteuid() != 0) {
-        print_error_and_exit("Error: This operation requires root privileges.");
+void check_root() {
+    if (geteuid() != 0)
+        die("This operation requires root privileges.");
+}
+
+void check_dev(const char *dev) {
+    struct stat st;
+    if (stat(dev, &st) || !S_ISBLK(st.st_mode))
+        die("Invalid block device specified.");
+}
+
+int run_cmd(const char *cmd) {
+    int res = system(cmd);
+    if (res != 0)
+        fprintf(stderr, "Command failed: %s\n", cmd);
+    return res;
+}
+
+void check_zramctl() {
+    if (run_cmd("command -v zramctl >/dev/null 2>&1"))
+        die("zramctl is not installed. Try: apk add util-linux-zramctl");
+}
+
+void ensure_zram() {
+    if (run_cmd("lsmod | grep -q '^zram'")) {
+        puts("Loading zram module...");
+        if (run_cmd("modprobe zram"))
+            die("Could not load zram module.");
     }
 }
 
-void validate_device(const char *device) {
-    struct stat st;
-    if (stat(device, &st) || !S_ISBLK(st.st_mode)) {
-        print_error_and_exit("Invalid device specified.");
-    }
+int is_valid_size(const char *sz) {
+    char unit = '\0';
+    return (sscanf(sz, "%*d%c", &unit) == 1) && (unit == 'G' || unit == 'M' || unit == 'K');
+}
+
+int is_valid_algo(const char *algo) {
+    const char *list[] = {"lzo", "lzo-rle", "lz4", "lz4hc", "zstd", "deflate", "842"};
+    for (size_t i = 0; i < sizeof(list)/sizeof(list[0]); ++i)
+        if (!strcmp(algo, list[i])) return 1;
+    return 0;
 }
 
 void usage() {
-    printf(
-        "czram - A lightweight utility for zram device management\n"
+    puts(
+        "czram - Lightweight zram manager\n"
         "Usage:\n"
-        "  czram make [-s|--size SIZE] [-a|--algorithm ALGO] [-p|--priority PRIORITY]  Create a zram device\n"
-        "  czram toss [--all | DEVICE]                                                Remove zram devices\n"
-        "  czram list                                                                 List active zram devices\n"
-        "  czram -v|--version                                                         Display version information\n"
-        "\nOptions:\n"
-        "  -s, --size SIZE       Size of the zram device (default: 4G)\n"
-        "  -a, --algorithm ALGO  Compression algorithm (default: zstd)\n"
-        "  -p, --priority PRIO   Swap priority (default: 100, max: 32767)\n"
-        "  --all                 Remove all zram devices\n"
-        "  DEVICE                Path to a specific zram device (e.g., /dev/zram0)\n"
-        "\nExamples:\n"
+        "  czram make [-s SIZE] [-a ALGO] [-p PRIO]   Create a zram device\n"
+        "  czram toss [--all | DEVICE]                Remove zram devices\n"
+        "  czram list                                 List active zram devices\n"
+        "  czram -v|--version                         Show version info\n"
+        "Options:\n"
+        "  -s, --size SIZE     Size of zram device (default: 4G)\n"
+        "  -a, --algorithm A   Compression algorithm (default: zstd)\n"
+        "  -p, --priority P    Swap priority (0-32767, default: 100)\n"
+        "  --all               Remove all zram devices\n"
+        "Examples:\n"
         "  czram make -s 2G -a lzo -p 500\n"
         "  czram toss --all\n"
-        "  czram list\n");
+    );
     exit(1);
 }
 
 void version() {
-    printf("czram %s\n", VERSION);
+    printf("czram %s\n", VER);
     exit(0);
-}
-
-int run_command(const char *command) {
-    int result = system(command);
-    if (result != 0) {
-        fprintf(stderr, "Command failed: %s\n", command);
-    }
-    return result;
-}
-
-void check_zramctl() {
-    if (run_command("command -v zramctl >/dev/null 2>&1")) {
-        print_error_and_exit("Error: zramctl is not installed.\nInstall it with: apk add util-linux-zramctl");
-    }
-}
-
-void ensure_zram_module() {
-    if (run_command("lsmod | grep -q '^zram'")) {
-        printf("Loading zram module...\n");
-        if (run_command("modprobe zram")) {
-            print_error_and_exit("Failed to load zram module.");
-        }
-    }
-}
-
-int is_valid_size(const char *size) {
-    char dummy[2];
-    return sscanf(size, "%*[0-9]%1[GMK]", dummy) == 1;
-}
-
-int is_valid_algorithm(const char *algo) {
-    const char *valid_algos[] = {"lzo", "lzo-rle", "lz4", "lz4hc", "zstd", "deflate", "842"};
-    for (size_t i = 0; i < sizeof(valid_algos) / sizeof(valid_algos[0]); i++) {
-        if (!strcmp(algo, valid_algos[i])) return 1;
-    }
-    return 0;
 }
 
 void list_zram() {
     check_zramctl();
-    printf("Active zram devices:\n");
-    if (run_command("zramctl")) {
-        print_error_and_exit("Failed to list zram devices.");
-    }
+    puts("Active zram devices:");
+    if (run_cmd("zramctl"))
+        die("Failed to list zram devices.");
 }
 
 void create_zram(int argc, char **argv) {
-    char size[16] = "4G";
-    char algorithm[16] = "zstd";
-    int priority = 100;
+    char sz[16] = "4G", algo[16] = "zstd";
+    int prio = 100;
 
-    for (int i = 0; i < argc; i++) {
+    for (int i = 0; i < argc; ++i) {
         if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--size")) {
-            if (++i >= argc || !is_valid_size(argv[i])) {
-                print_error_and_exit("Invalid size specified.");
-            }
-            strncpy(size, argv[i], sizeof(size) - 1);
+            if (++i >= argc || !is_valid_size(argv[i]))
+                die("Invalid size format.");
+            strncpy(sz, argv[i], sizeof(sz) - 1);
         } else if (!strcmp(argv[i], "-a") || !strcmp(argv[i], "--algorithm")) {
-            if (++i >= argc || !is_valid_algorithm(argv[i])) {
-                print_error_and_exit("Invalid algorithm specified.");
-            }
-            strncpy(algorithm, argv[i], sizeof(algorithm) - 1);
+            if (++i >= argc || !is_valid_algo(argv[i]))
+                die("Invalid compression algorithm.");
+            strncpy(algo, argv[i], sizeof(algo) - 1);
         } else if (!strcmp(argv[i], "-p") || !strcmp(argv[i], "--priority")) {
-            if (++i >= argc || sscanf(argv[i], "%d", &priority) != 1 || priority < 0 || priority > 32767) {
-                print_error_and_exit("Invalid priority specified. Must be between 0 and 32767.");
-            }
+            if (++i >= argc || sscanf(argv[i], "%d", &prio) != 1 || prio < 0 || prio > 32767)
+                die("Invalid priority. Must be 0-32767.");
         } else {
-            print_error_and_exit("Unknown option encountered.");
+            die("Unknown option.");
         }
     }
 
-    check_root_privileges();
+    check_root();
     check_zramctl();
-    ensure_zram_module();
+    ensure_zram();
 
-    char command[256], zram_device[64];
-    snprintf(command, sizeof(command), "zramctl --find --size %s --algorithm %s", size, algorithm);
+    char cmd[256], dev[64];
+    snprintf(cmd, sizeof(cmd), "zramctl --find --size %s --algorithm %s", sz, algo);
 
-    FILE *pipe = popen(command, "r");
-    if (!pipe || !fgets(zram_device, sizeof(zram_device), pipe)) {
-        pclose(pipe);
-        print_error_and_exit("Failed to create zram device.");
+    FILE *fp = popen(cmd, "r");
+    if (!fp || !fgets(dev, sizeof(dev), fp)) {
+        if (fp) pclose(fp);
+        die("zramctl failed to create device.");
     }
-    pclose(pipe);
+    pclose(fp);
 
-    zram_device[strcspn(zram_device, "\n")] = '\0';
-    printf("Created zram device: %s\n", zram_device);
+    dev[strcspn(dev, "\n")] = 0;
 
-    snprintf(command, sizeof(command), "mkswap %s && swapon -p %d %s", zram_device, priority, zram_device);
-    if (run_command(command)) {
-        print_error_and_exit("Failed to format or enable swap on zram device.");
-    }
+    printf("Created: %s\n", dev);
+    snprintf(cmd, sizeof(cmd), "mkswap %s && swapon -p %d %s", dev, prio, dev);
+    if (run_cmd(cmd))
+        die("Failed to format or enable swap.");
 
-    printf("Swap enabled on %s with priority %d.\n", zram_device, priority);
+    printf("Swap enabled on %s (priority %d)\n", dev, prio);
 }
 
 void remove_zram(const char *arg) {
-    check_root_privileges();
+    check_root();
 
     if (!strcmp(arg, "--all")) {
-        FILE *pipe = popen("zramctl | awk 'NR > 1 {print $1}'", "r");
-        if (!pipe) {
-            perror("popen");
-            exit(1);
-        }
+        FILE *fp = popen("zramctl | awk 'NR>1 {print $1}'", "r");
+        if (!fp) die("Failed to enumerate devices.");
 
-        char device[64];
-        int found = 0;
+        char dev[64];
+        int removed = 0;
 
-        while (fgets(device, sizeof(device), pipe)) {
-            device[strcspn(device, "\n")] = '\0';
-            printf("Removing %s...\n", device);
+        while (fgets(dev, sizeof(dev), fp)) {
+            dev[strcspn(dev, "\n")] = 0;
+            printf("Removing %s...\n", dev);
 
-            char command[128];
-            snprintf(command, sizeof(command), "swapoff %s && zramctl --reset %s", device, device);
-
-            if (run_command(command)) {
-                pclose(pipe);
-                print_error_and_exit("Failed to remove zram device.");
+            char cmd[128];
+            snprintf(cmd, sizeof(cmd), "swapoff %s && zramctl --reset %s", dev, dev);
+            if (run_cmd(cmd)) {
+                pclose(fp);
+                die("Failed to remove zram device.");
             }
-
-            found = 1;
+            removed = 1;
         }
 
-        pclose(pipe);
-
-        if (!found) {
-            printf("No active zram devices found.\n");
-        } else {
-            printf("All zram devices removed successfully.\n");
-        }
+        pclose(fp);
+        puts(removed ? "All zram devices removed." : "No zram devices found.");
     } else {
-        validate_device(arg);
+        check_dev(arg);
         printf("Removing %s...\n", arg);
-
-        char command[128];
-        snprintf(command, sizeof(command), "swapoff %s && zramctl --reset %s", arg, arg);
-
-        if (run_command(command)) {
-            print_error_and_exit("Failed to remove zram device.");
-        }
-
-        printf("%s removed successfully.\n", arg);
+        char cmd[128];
+        snprintf(cmd, sizeof(cmd), "swapoff %s && zramctl --reset %s", arg, arg);
+        if (run_cmd(cmd))
+            die("Failed to remove zram device.");
+        puts("Device removed.");
     }
 }
 
@@ -214,9 +184,7 @@ int main(int argc, char **argv) {
     if (!strcmp(argv[1], "make")) {
         create_zram(argc - 2, argv + 2);
     } else if (!strcmp(argv[1], "toss")) {
-        if (argc < 3) {
-            print_error_and_exit("Error: Missing argument for 'toss'.");
-        }
+        if (argc < 3) die("Missing argument for 'toss'");
         remove_zram(argv[2]);
     } else if (!strcmp(argv[1], "list")) {
         list_zram();
@@ -225,6 +193,6 @@ int main(int argc, char **argv) {
     } else {
         usage();
     }
-
     return 0;
 }
+
